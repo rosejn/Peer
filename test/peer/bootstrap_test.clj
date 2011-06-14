@@ -1,6 +1,6 @@
-(ns plasma.net.bootstrap-test
+(ns peer.bootstrap-test
   (:use [plasma graph util api]
-        [plasma.net peer url connection bootstrap]
+        [peer core url connection bootstrap]
         test-utils
         clojure.test
         clojure.stacktrace)

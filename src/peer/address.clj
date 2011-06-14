@@ -1,5 +1,5 @@
-(ns plasma.net.address
-  (:use [plasma.net url])
+(ns peer.address
+  (:use peer.url)
   (import [org.bitlet.weupnp GatewayDiscover PortMappingEntry]
           [java.net InetAddress NetworkInterface]))
 
@@ -45,10 +45,15 @@
        (NetAddress. local local)))))
 
 (defn public-url
+  "Get the public url for the given port number by getting public IP from the
+  local router using UPNP."
   [port]
-  (plasma-url (or (:public (addr-info)) "127.0.0.1") port))
+  (peer-url (or (:public (addr-info)) "127.0.0.1") port))
 
 (defn set-port-forward
+  "Setup a port forward on the local router using UPNP.  Throws an exception
+  if the operation fails.  Proto is either UDP or TCP, and the service is a
+  string label that will be used to refer to the port forward on the router."
   ([port service]
    (set-port-forward port "TCP" service))
   ([port proto service]
@@ -60,6 +65,7 @@
        (.addPortMapping g port port addr proto service)))))
 
 (defn clear-port-forward
+  "Clear a port forward."
   ([port]
    (clear-port-forward port :tcp))
   ([port proto]

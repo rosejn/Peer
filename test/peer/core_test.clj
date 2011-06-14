@@ -1,20 +1,19 @@
-(ns plasma.net.peer-test
-  (:use [plasma config util graph api]
-        [plasma.net url connection peer]
-        [plasma.query construct]
+(ns peer.core-test
+  (:use [plasma util graph api construct]
+        [peer core config url connection]
         test-utils
         clojure.contrib.generic.math-functions
         clojure.test
         clojure.stacktrace)
   (:require [logjam.core :as log]
             [lamina.core :as lamina]
-            [plasma.query.core :as q]
+            [plasma.query :as q]
             [jiraph.graph :as jiraph]))
 
 (deftest get-node-test
   (let [p (peer {:path "db/p1" :port 1234})]
     (try
-      (let [client (get-connection (connection-manager) (plasma-url "localhost" 1234))]
+      (let [client (get-connection (connection-manager) (peer-url "localhost" 1234))]
         (dotimes [i 4]
           (let [res-chan (get-node client ROOT-ID)
                 res (wait-for res-chan 400)]
@@ -32,7 +31,7 @@
 (deftest simple-query-test []
   (let [port (+ 10000 (rand-int 10000))
         p (peer {:path "db/p1" :port port})
-        con (get-connection (connection-manager) (plasma-url "localhost" port))
+        con (get-connection (connection-manager) (peer-url "localhost" port))
         q (-> (q/path [s [:music :synths :synth]])
             (q/where (> (* 100 (:score 's)) (sqrt 2500))))]
     (try
@@ -60,7 +59,7 @@
                                                    foo bar :bar])))]
         (is (= bar (:id (first (query local (q/path [:foo :bar])))))))
 
-      (let [con (get-connection manager (plasma-url "localhost" port))]
+      (let [con (get-connection manager (peer-url "localhost" port))]
         (is (uuid? (:id (wait-for (get-node con ROOT-ID) 200))))
         (let [q (-> (q/path [s [:music :synths :synth]])
                   (q/where (>= (:score 's) 0.6)))
@@ -96,7 +95,7 @@
                          (-> (nodes
                                [net (q/path [:net])
                                 remote {:id remote-root
-                                        :proxy (plasma-url "localhost" (:port remote))}])
+                                        :proxy (peer-url "localhost" (:port remote))}])
                            (edges
                              [net remote :peer])))
 
@@ -146,7 +145,7 @@
           (make-edge ROOT-ID net {:label :net})
           (doseq [[p peer-root n] peers]
             (make-edge net
-                       (make-proxy-node peer-root (plasma-url "localhost" (+ port n 1)))
+                       (make-proxy-node peer-root (peer-url "localhost" (+ port n 1)))
                        :peer))))
       (let [q (-> (q/path [doc [:net :peer :docs :doc]])
                 (q/where (> (:score 'doc) 0.5))
@@ -194,7 +193,7 @@
     (try
       (on-connect local (fn [new-con] (swap! connected #(conj % (:url new-con)))))
       (dotimes [i 10]
-        (let [con (get-connection (connection-manager) (plasma-url "localhost" 2342))]
+        (let [con (get-connection (connection-manager) (peer-url "localhost" 2342))]
           (wait-for (get-node con ROOT-ID) 200)
           (close con)))
       (is (= 10 (count @connected)))
@@ -214,7 +213,7 @@
                                    (future
                                      (let [root (wait-for (get-node incoming ROOT-ID) 200)]
                                        (swap! res #(conj % [2 (:id root)]))))))
-      (let [con (get-connection (connection-manager) (plasma-url "localhost" 3333))]
+      (let [con (get-connection (connection-manager) (peer-url "localhost" 3333))]
         (handle-peer-connection p1 con)
         (Thread/sleep 100)
         (let [id (:id (get-node p1 ROOT-ID))
@@ -232,7 +231,7 @@
     (try
       (reset-peer local)
       (let [n-id (with-peer-graph local (make-node))
-            con (get-connection (connection-manager) (plasma-url "localhost" port))
+            con (get-connection (connection-manager) (peer-url "localhost" port))
             n-chan (peer-node-event-channel con n-id)
             e-chan (peer-edge-event-channel con n-id :test)]
         (Thread/sleep 50)
@@ -253,7 +252,7 @@
 
 (comment
 (def p (peer {:port 1234}))
-(def con (get-connection (connection-manager) (plasma-url "localhost" 1234)))
+(def con (get-connection (connection-manager) (peer-url "localhost" 1234)))
 (query p (q/path [:net]))
 (query con (q/path [:net]))
 (query-channel con (q/path [:net]))

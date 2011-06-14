@@ -1,7 +1,9 @@
 (ns test-utils
-  (:use [peer peer url connection bootstrap]
-        [clojure test stacktrace])
-  (:require [lamina.core :as lamina]))
+  (:use [peer core url connection bootstrap]
+        [clojure test stacktrace]
+        [plasma graph])
+  (:require [lamina.core :as lamina]
+            [plasma.construct :as c]))
 
 (defn make-peers
   "Create n peers, each with a monotically increasing port number.
@@ -33,7 +35,38 @@
   [n]
   (let [port (+ 5000 (rand-int 5000))
         strapper (bootstrap-peer {:path "db/strapper" :port port})
-        strap-url (plasma-url "localhost" port)
+        strap-url (peer-url "localhost" port)
         peers (make-peers n (inc port) identity)]
     (bootstrap-peers peers strap-url)
     [strapper peers]))
+
+(defn test-graph []
+  (c/construct*
+    (-> (c/nodes [root     ROOT-ID
+                net      :net
+                music    :music
+                synths   :synths
+                kick    {:label :kick  :score 0.8}
+                hat     {:label :hat   :score 0.3}
+                snare   {:label :snare :score 0.4}
+                bass    {:label :bass  :score 0.6}
+                sessions :sessions
+                take-six :take-six
+                red-pill :red-pill])
+      (c/edges
+        [root     net      :net
+         root     music    :music
+         music    synths   :synths
+         synths   bass     {:label :synth :favorite true}
+         synths   hat      :synth
+         synths   kick     :synth
+         synths   snare    :synth
+         root     sessions :sessions
+         sessions take-six :session
+         take-six kick     :synth
+         take-six bass     :synth
+         sessions red-pill :session
+         red-pill hat      :synth
+         red-pill snare    :synth
+         red-pill kick     :synth]))))
+

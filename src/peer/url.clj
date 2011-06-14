@@ -1,4 +1,4 @@
-(ns peer.net.url
+(ns peer.url
   (:use [peer config]))
 
 (defn url

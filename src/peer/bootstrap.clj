@@ -1,7 +1,7 @@
-(ns plasma.net.bootstrap
-  (:use [plasma graph util config api]
-        [plasma.net connection peer address])
-  (:require [plasma.query.core :as q]
+(ns peer.bootstrap
+  (:use [plasma graph util]
+        [peer core config connection address])
+  (:require [plasma.query :as q]
             [lamina.core :as lamina]
             [logjam.core :as log]))
 
@@ -23,7 +23,7 @@
     (log/to :bootstrap "[advertise-handler] got advertisement:" url root-id)
     (when-not (have-peer? p url)
             (add-peer p root-id url)))
-  (log/to :bootstrap "[advertise-handler] bootstrap peer has:" 
+  (log/to :bootstrap "[advertise-handler] bootstrap peer has:"
           (count (get-peers p)) "peers"))
 
 (defn- bootstrap-connect-handler

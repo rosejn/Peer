@@ -1,7 +1,7 @@
-(ns plasma.net.connection-test
+(ns peer.connection-test
   (:use clojure.test
-        [plasma config util api]
-        [plasma.net url connection rpc])
+        [plasma util]
+        [peer config url connection rpc])
   (:require [logjam.core :as log]
             [lamina.core :as lamina]))
 

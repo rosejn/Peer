@@ -1,9 +1,9 @@
 (ns peer.config
-  (:use peer.util))
+  (:use plasma.util))
 
 (defonce config*
   (ref {:peer-version      "0.1.0"            ; version number, for protocol versioning
-        :protocol            "peer"           ; default peer protocol
+        :protocol            "plasma"           ; default peer protocol
         :peer-port            4242              ; listening for incoming socket connections
         :presence-port        4243              ; UDP broadcast port for presence messaging
         :presence-period      5000              ; presence broadcast period in ms

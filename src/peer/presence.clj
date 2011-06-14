@@ -1,6 +1,6 @@
-(ns plasma.net.presence
-  (:use [plasma config util]
-        [plasma.net address]
+(ns peer.presence
+  (:use [peer config address]
+        [plasma util]
         [lamina core]
         [aleph udp]))
 
