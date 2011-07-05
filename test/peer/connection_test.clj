@@ -27,7 +27,7 @@
     (try
       (dotimes [i 300]
         (refresh-connection manager (MockConnection.
-                                    (url "plasma" "plasma.org" i)))
+                                    (url "peer" "plasma.org" i)))
         (is (<= (connection-count manager)
                 (config :connection-cache-limit))))
       (finally
@@ -44,10 +44,11 @@
                     (let [requests (request-channel con)]
                       (lamina/receive-all requests
                                           (fn [[ch req]]
-                                            (log/to :con "got request: " req)
-                                            (let [val (* 2 (first (:params req)))
-                                                  res (rpc-response req val)]
-                                              (lamina/enqueue ch res)))))))
+                                            (when req
+                                              (log/to :con "got request: " req)
+                                              (let [val (* 2 (first (:params req)))
+                                                    res (rpc-response req val)]
+                                                (lamina/enqueue ch res))))))))
 
       (let [client (get-connection manager (url proto "localhost" port))]
         (dotimes [i 20]
@@ -61,8 +62,8 @@
         (clear-connections manager)))))
 
 (deftest connection-rpc-test
-  (rpc-test "plasma" 1234)
-  (rpc-test "uplasma" 1234))
+  (rpc-test "peer" 1234)
+  (rpc-test "upeer" 1234))
 
 (defn event-test
   [proto port]
@@ -87,8 +88,8 @@
         (clear-connections manager)))))
 
 (deftest connection-event-test
-  (event-test "plasma" 1234)
-  (event-test "uplasma" 1234))
+  (event-test "peer" 1234)
+  (event-test "upeer" 1234))
 
 (defn stream-test
   [proto port]
@@ -99,10 +100,12 @@
         (fn [con]
           (lamina/receive-all (stream-channel con)
             (fn [[s-chan msg]]
-              (lamina/enqueue s-chan (inc (first (:params msg))))
-              (lamina/receive-all s-chan
-                                  (fn [v]
-                                    (lamina/enqueue s-chan (inc v))))))))
+              (when msg
+                (lamina/enqueue s-chan (inc (first (:params msg))))
+                (lamina/receive-all s-chan
+                                    (fn [v]
+                                      (when v
+                                        (lamina/enqueue s-chan (inc v))))))))))
 
         (let [client (get-connection manager (url proto "localhost" port))
               s-chan (stream client 'foo [1])
@@ -120,8 +123,8 @@
         (clear-connections manager)))))
 
 (deftest connection-stream-test
-  (stream-test "plasma" 1234)
-  (stream-test "uplasma" 1234))
+  (stream-test "peer" 1234)
+  (stream-test "upeer" 1234))
 
 ;(use 'aleph.object)
 ;(use 'lamina.core)

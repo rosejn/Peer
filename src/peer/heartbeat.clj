@@ -1,8 +1,8 @@
 (ns plasma.net.heartbeat
   (:use [plasma graph util config api]
-        [plasma.net connection peer address]
+        [peer connection core address]
         jiraph.graph)
-  (:require [plasma.query.core :as q]
+  (:require [plasma.query :as q]
             [lamina.core :as lamina]
             [logjam.core :as log]))
 

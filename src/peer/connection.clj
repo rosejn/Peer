@@ -166,7 +166,7 @@
   "Returns a channel representing a network connection to the peer listening at URL."
   (fn [url] (keyword (:proto (url-map url)))))
 
-(defmethod connection-channel :plasma
+(defmethod connection-channel :peer
   [url]
   (let [{:keys [proto host port]} (url-map url)
         client (object-client {:host host :port port})
@@ -183,7 +183,7 @@
     (with-meta obj m)
     obj))
 
-(defmethod connection-channel :uplasma
+(defmethod connection-channel :upeer
   [url]
   (let [in-port (+ BASE-UDP-PORT (rand-int 20000))
         udp-chan @(udp-object-socket {:port in-port})
@@ -218,10 +218,6 @@
 (defn- make-connection
   [url]
   (let [chan (connection-channel url)]
-    (lamina/receive-all (lamina/fork chan)
-                 (fn [msg]
-                   (log/to :con "[make-connection] msg: " msg)))
-
     (Connection. url chan)))
 
 (defprotocol IConnectionCache
@@ -365,11 +361,11 @@
   (fn [proto port handler]
     (keyword proto)))
 
-(defmethod make-listener :plasma
+(defmethod make-listener :peer
   [proto port handler]
   (start-object-server handler {:port port}))
 
-(defmethod make-listener :uplasma
+(defmethod make-listener :upeer
   [proto port handler]
   (let [known-hosts (ref #{})
         udp-chan @(udp-object-socket {:port port})]

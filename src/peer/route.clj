@@ -1,10 +1,10 @@
 (ns plasma.net.route
   (:use [plasma graph util digest api]
-        [plasma.net connection peer url]
+        [peer connection core url]
         [clojure.contrib.math :only (expt)])
   (:require [logjam.core :as log]
             [lamina.core :as lamina]
-            [plasma.query.core :as q]))
+            [plasma.query :as q]))
 
 (defn flood-n
   [])

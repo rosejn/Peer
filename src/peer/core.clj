@@ -18,6 +18,9 @@
 (def *manager* nil)
 (def DEFAULT-HTL 50)
 
+(defprotocol IPeer
+  (peer-id [this] "Get a peer's ID."))
+
 (defprotocol IQueryable
   ; TODO: change this to find-node once core and query are refactored...
   (get-node
@@ -46,9 +49,6 @@
     "Execute a query iteratively, n times. The output of one execution is
     used as the input to the iteration.")
 )
-
-(defprotocol IPeer
-  (peer-id [this] "Get the UUID for this peer."))
 
 (defrecord GraphPeer
   [manager graph url port listener status options] ; peer-id, port, max-peers
@@ -427,7 +427,7 @@
   IPeer
   {:peer-id peer-peer-id})
 
-(defmethod remote-query-fn :plasma
+(defmethod remote-query-fn :peer
   [url]
   (partial peer-query-channel (get-connection *manager* url)))
 

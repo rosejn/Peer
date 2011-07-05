@@ -6,14 +6,14 @@
         clojure.stacktrace)
   (:require [logjam.core :as log]
             [lamina.core :as lamina]
-            [plasma.query.core :as q]))
+            [plasma.query :as q]))
 
 ;(log/file [:peer :bootstrap :con] "peer.log")
 
 (deftest bootstrap-test
   (let [port (+ 5000 (rand-int 5000))
         strapper (bootstrap-peer {:port port})
-        strap-url (plasma-url "localhost" port)
+        strap-url (peer-url "localhost" port)
         n-peers 10
         peers (make-peers n-peers (inc port)
                 (fn [i]
@@ -37,16 +37,16 @@
 
 (comment
   (def strap (bootstrap-peer {:port 2345}))
-  (def strap-url (plasma-url "localhost" 2345))
+  (def strap-url (peer-url "localhost" 2345))
 
   (def peers (make-peers 2 2223
-  (fn [i]
-  (clear-graph)
-  (let [root-id (root-node-id)]
-  (assoc-node root-id :peer-id i)
-  (make-edge root-id (make-node) :net)))))
+                         (fn [i]
+                           (clear-graph)
+                           (let [root-id (root-node-id)]
+                             (assoc-node root-id :peer-id i)
+                             (make-edge root-id (make-node) :net)))))
 
-  (bootstrap (second peers) (plasma-url "localhost" 2234))
+  (bootstrap (second peers) strap-url)
   (query (first peers) (-> (q/path [peer [:net :peer]])
   (q/project [peer :proxy :id])) {} 500)
 )
