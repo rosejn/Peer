@@ -5,10 +5,8 @@
 
 (defn gateway* []
   (try
-    (let [discoverer (GatewayDiscover.)]
-      (.discover discoverer)
-      (.getValidGateway discoverer))
-    (catch java.io.IOException e
+    (doto (GatewayDiscover.) .discover .getValidGateway)
+    (catch java.io.IOException _
       nil)))
 
 ; TODO: This is memoized so we don't wait for a nil gateway after already
@@ -21,9 +19,9 @@
   []
   (let [ifaces (enumeration-seq (NetworkInterface/getNetworkInterfaces))
         addrs (flatten (map #(enumeration-seq (.getInetAddresses %)) ifaces))
-        hosts (map #(apply str (drop 1 (.toString %))) addrs)
-        ips (filter #(not (nil? (re-find #"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]" %))) hosts)
-        me (first (filter #(not (= "127.0.0.1" %)) ips))]
+        hosts (map #(.substring (.toString %) 1) addrs)
+        ips (filter #(re-find #"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]" %) hosts)
+        me (first (remove #{"127.0.0.1"} ips))]
     me))
 
 (defn local-broadcast-addr
