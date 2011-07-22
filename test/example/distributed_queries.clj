@@ -28,10 +28,10 @@
               ROOT-ID       projects   :projects
 							]))))
 
-(def me     (peer {:port 1100}))
-(def alice  (peer {:port 1101}))
-(def bob    (peer {:port 1102}))
-(def carlos (peer {:port 1103}))
+(defonce me     (peer {:port 1100}))
+(defonce alice  (peer {:port 1101}))
+(defonce bob    (peer {:port 1102}))
+(defonce carlos (peer {:port 1103}))
 
 (defn setup-projects
   "Setup a basic graph adding two projects to peer p."

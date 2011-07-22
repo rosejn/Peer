@@ -1,7 +1,6 @@
-(ns plasma.net.heartbeat
-  (:use [plasma graph util config api]
-        [peer connection core address]
-        jiraph.graph)
+(ns peer.heartbeat
+  (:use [plasma graph util api]
+        [peer core address connection config])
   (:require [plasma.query :as q]
             [lamina.core :as lamina]
             [logjam.core :as log]))
@@ -16,15 +15,9 @@
     (swap! heartbeats* (fn [beats]
                          (update-in beats [id] #(conj % ts))))))
 
-; TODO: abstract this pattern, also used in bootstrap
-(defn- heartbeat-connect-handler
-  [peer con]
-  (lamina/receive-all (event-channel con :heartbeat)
-                      (partial heartbeat-handler peer con)))
-
 (defn detect-failures
   [peer]
-  (on-connect peer (partial heartbeat-connect-handler peer)))
+  (peer-event-handler peer :heartbeat heartbeat-handler))
 
 (defn- send-heartbeat
   [con root-id]

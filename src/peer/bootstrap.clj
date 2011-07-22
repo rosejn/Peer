@@ -27,11 +27,6 @@
     (log/to :bootstrap "[advertise-handler] bootstrap peer has:"
             (count (get-peers p)) "peers")))
 
-(defn- bootstrap-connect-handler
-  [p con]
-  (lamina/receive-all (event-channel con :advertise)
-                      (partial advertise-handler p con)))
-
 (defn bootstrap-peer
   "Returns a peer that will automatically add new peers to its graph at
   [:net :peer] when they connect."
@@ -40,7 +35,7 @@
    (let [p (peer options)]
      (with-peer-graph p (clear-graph))
      (setup-peer-graph p)
-     (on-connect p (partial bootstrap-connect-handler p))
+     (peer-event-handler p :bootstrap-advertise advertise-handler)
      (log/to :bootstrap "[bootstrap-peer] has:" (count (get-peers p)) "peers")
      p)))
 
@@ -76,7 +71,7 @@
 
 (defn- advertise
   [con root-id url]
-  (send-event con :advertise [root-id url]))
+  (send-event con :bootstrap-advertise [root-id url]))
 
 (defn- bootstrap*
   [p boot-url]

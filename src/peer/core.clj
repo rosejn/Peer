@@ -308,7 +308,7 @@
                 "-------------------------------\n"
                 (with-out-str (print-cause-trace e)))))))
 
-(defn handle-peer-connection
+(defn setup-peer-query-handlers
   "Hook a connection up to a peer so that it can receive queries."
   [peer con]
   (log/to :peer "handle-peer-connection new-connection: " (:url con))
@@ -349,7 +349,7 @@
          url (public-url port)
          p (GraphPeer. manager g url port listener status options)]
      (setup-peer-graph p)
-     (on-connect p (partial handle-peer-connection p))
+     (on-connect p (partial setup-peer-query-handlers p))
 
      (when (config :presence)
        (setup-peer-presence p))
@@ -430,4 +430,16 @@
 (defmethod remote-query-fn :peer
   [url]
   (partial peer-query-channel (get-connection *manager* url)))
+
+(defn peer-event-handler
+  "Setup an event handler that will be added to each new peer connection.
+  Takes an event type and a handler function that will be called each time a
+  matching event message is received.  The handler should take 3 arguments
+  which will be the local peer, the remote-peer connection, and the event map."
+  [p event handler]
+  (on-connect p
+              (fn [con]
+                (lamina/receive-all (event-channel con event)
+                      #(handler p con %)))))
+
 
