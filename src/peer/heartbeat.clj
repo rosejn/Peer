@@ -12,8 +12,7 @@
   [peer con event]
   (let [ts (current-time)
         id (first (:params event))]
-    (swap! heartbeats* (fn [beats]
-                         (update-in beats [id] #(conj % ts))))))
+    (swap! heartbeats* update-in [id] conj ts)))
 
 (defn detect-failures
   [peer]
