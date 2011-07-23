@@ -1,10 +1,14 @@
 (ns peer.presence
-  (:use [peer config address]
+  (:use [peer config]
         [plasma util]
         [lamina core]
         [aleph udp]))
 
 (def listeners* (ref {}))
+
+(defn broadcast-addr
+  []
+  "255.255.255.255")
 
 (defn presence-channel
   "Returns a channel that will receive all presence messages broadcast

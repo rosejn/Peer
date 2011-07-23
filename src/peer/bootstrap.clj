@@ -1,6 +1,6 @@
 (ns peer.bootstrap
   (:use [plasma graph util]
-        [peer core config connection address])
+        [peer core config connection])
   (:require [plasma.query :as q]
             [lamina.core :as lamina]
             [logjam.core :as log]))
@@ -77,8 +77,8 @@
   [p boot-url]
   (let [booter (peer-connection p boot-url)
         root-id (with-peer-graph p (root-node-id))
-        my-url (public-url (:port p))]
-    (handle-peer-connection p booter)
+        my-url (:url p)]
+    (setup-peer-query-handlers p booter)
     (advertise booter root-id my-url)
     (add-bootstrap-peers p boot-url N-BOOTSTRAP-PEERS)))
 

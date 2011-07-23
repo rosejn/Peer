@@ -1,5 +1,5 @@
 (ns peer.core
-  (:use [peer config url connection address presence rpc]
+  (:use [peer config url connection presence rpc]
         [plasma util graph remote]
     clojure.stacktrace)
   (:require [logjam.core :as log]
@@ -100,7 +100,7 @@
     (let [params (merge (:params q) params)
           iplan (assoc q
                        :type :recur-query
-                       :src-url (public-url port)
+                       :src-url (:public-url listener)
                        :pred pred
                        :recur-count count
                        :htl DEFAULT-HTL
@@ -141,7 +141,7 @@
     [this n q params]
      (let [iplan (assoc q
                         :type :iter-n-query
-                        :src-url (public-url port)
+                        :src-url (:public-url listener)
                         :iter-n n
                         :htl DEFAULT-HTL
                         :iter-params params)]
@@ -346,7 +346,7 @@
              (open-graph))
          listener (connection-listener manager (config :protocol) port)
          status (atom :running)
-         url (public-url port)
+         url (:public-url listener)
          p (GraphPeer. manager g url port listener status options)]
      (setup-peer-graph p)
      (on-connect p (partial setup-peer-query-handlers p))

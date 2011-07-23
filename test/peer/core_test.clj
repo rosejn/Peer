@@ -214,7 +214,7 @@
                                      (let [root (wait-for (get-node incoming ROOT-ID) 200)]
                                        (swap! res #(conj % [2 (:id root)]))))))
       (let [con (get-connection (connection-manager) (peer-url "localhost" 3333))]
-        (handle-peer-connection p1 con)
+        (setup-peer-query-handlers p1 con)
         (Thread/sleep 100)
         (let [id (:id (get-node p1 ROOT-ID))
               sres (sort-by first @res)]

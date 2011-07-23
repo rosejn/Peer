@@ -3,10 +3,73 @@
         plasma.util
         [aleph object udp])
   (:require [logjam.core :as log]
-						[lamina.core :as lamina]))
+						[lamina.core :as lamina])
+  (:import [org.bitlet.weupnp GatewayDiscover PortMappingEntry]
+           [java.net InetAddress NetworkInterface]))
 
 (def *connection-timeout* 2000)
 (def *cache-keep-ratio* 0.8)
+
+(defn gateway []
+  (try
+    (.getValidGateway (GatewayDiscover.))
+    (catch java.io.IOException _
+      nil)))
+
+; Running the discovery every time takes too long...
+(def find-gateway (memoize gateway))
+
+(defrecord NetAddress [local public])
+
+(defn local-addr
+  []
+  (let [ifaces (enumeration-seq (NetworkInterface/getNetworkInterfaces))
+        addrs (flatten (map #(enumeration-seq (.getInetAddresses %)) ifaces))
+        hosts (map #(.substring (.toString %) 1) addrs)
+        ips (filter #(re-find #"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]" %) hosts)
+        me (first (remove #{"127.0.0.1"} ips))]
+    me))
+
+(defn local-broadcast-addr
+  []
+  (apply str (concat (re-seq #"[0-9]*\." (local-addr)) ["255"])))
+
+(defn net-address
+  [g]
+  (if g
+    (NetAddress.
+      (.getLocalAddress g)
+      (.getExternalIPAddress g))
+    (let [local (local-addr)]
+      (NetAddress. local local))))
+
+(defn setup-port-forward
+  "Setup a port forward on the local router using UPNP.  Throws an exception
+  if the operation fails.  Proto is either :udp or :tcp, and the service is a
+  string label that will be used to refer to the port forward on the router.
+
+    (setup-port-forward 4242 :tcp \"super peer chat\")
+  "
+  ([port proto service]
+   (setup-port-forward (find-gateway) port proto service))
+  ([g port proto service]
+   (let [entry (PortMappingEntry.)
+         {:keys [local-addr public-addr]} (net-address g)
+         addr (.getHostAddress local-addr)]
+     (if-not (.getSpecificPortMappingEntry g port (.toUpperCase (name proto)) entry)
+       (.addPortMapping g port port addr proto service)))))
+
+(defn clear-port-forward
+  "Clear a port forward."
+  ([port]
+   (clear-port-forward port :tcp))
+  ([port proto]
+   (clear-port-forward (find-gateway) port proto))
+  ([gateway port proto]
+   (let [proto (cond
+                 (string? proto) (.toUpperCase proto)
+                 (keyword? proto) (.toUpperCase (name proto)))]
+     (.deletePortMapping gateway port proto))))
 
 ;(log/repl :con)
 
@@ -257,7 +320,7 @@
     [this]
     "Get the current number of connections in the cache."))
 
-(defrecord ConnectionCache
+(defrecord ConnectionManager
   [connections* flush-fn]
 
   IConnectionCache
@@ -332,7 +395,7 @@
   number of network connections, where the least-recently-used connections
   are dropped as new connections are made."
   []
-  (ConnectionCache. (ref {}) lru-flush))
+  (ConnectionManager. (ref {}) lru-flush ))
 
 (defprotocol IConnectionListener
   (on-connect
@@ -341,7 +404,7 @@
     handler will be passed a Connection."))
 
 (defrecord ConnectionListener
-  [server port chan]
+  [server port chan local-addr public-addr public-url]
 
   IConnectionListener
   (on-connect
@@ -419,6 +482,9 @@
   "Listen on a port for incoming connections, automatically registering them."
   [manager proto port]
   (let [connect-chan (lamina/channel)
+        g (find-gateway)
+        {:keys [local public]} (net-address g)
+        public-url (peer-url (or public local "127.0.0.1") port)
         listener (make-listener
                    proto port
                    (fn [chan client-info]
@@ -428,5 +494,5 @@
                            con (register-connection manager url chan)]
                        (log/to :con "listener new connection: " url con)
                        (lamina/enqueue connect-chan con))))]
-    (ConnectionListener. listener port connect-chan)))
+    (ConnectionListener. listener port connect-chan local public public-url)))
 

@@ -1,6 +1,6 @@
 (ns peer.heartbeat
   (:use [plasma graph util api]
-        [peer core address connection config])
+        [peer core connection config])
   (:require [plasma.query :as q]
             [lamina.core :as lamina]
             [logjam.core :as log]))
@@ -24,7 +24,7 @@
 
 (defn- do-heartbeat
   [peer n-query]
-  (let [root-id (with-graph (:graph peer) (root-node))]
+  (let [root-id (get-node peer ROOT-ID)]
     (doseq [neighbor (query peer n-query)]
       (let [con (get-connection (:manager peer) (:url neighbor))]
         (send-heartbeat con root-id)))))
